@@ -1,26 +1,40 @@
 # AI Release Metadata (ai-release-metadata)
 
-> **The SDK standardizes and propagates AI release metadata across engineering systems. It does not collect, store, analyze, or visualize that metadata.**
-
-A lightweight, framework-agnostic Python SDK for standardizing AI release metadata across production applications.
+> **A lightweight SDK for propagating standardized AI release metadata through existing observability systems.**
 
 ## The Problem
 
-When a production issue occurs in an AI-powered service (e.g., bad generation, regressions, prompt injection), it is often extremely difficult to quickly identify:
+When a production issue occurs in an AI-powered service (e.g., regressions, prompt injection, or unexpected model behaviour), it is often extremely difficult to quickly identify:
 * Which prompt version generated the response?
 * Which model was used?
 * Which Git commit or deployment version is responsible?
 * What experiments were active?
 
-While existing observability platforms effectively capture execution metrics such as latency and token usage, manually correlating these spans back to the underlying release lifecycle often results in fragmented and inconsistent metadata.
+While existing observability platforms effectively capture execution metrics such as latency and token usage, manually correlating these spans back to the exact release configuration often results in fragmented and inconsistent metadata.
 
 ## The Solution
 
 This SDK provides a minimal set of context managers and decorators that automatically enrich existing logs, metrics, and traces with standardized release and environment metadata.
 
+### Architecture
+
+```mermaid
+flowchart LR
+    Sources[Metadata Sources\n(Git, Env, GitHub)] --> Context((Release Context))
+    Context --> Exporters[Exporters\n(Structlog, OpenTelemetry)]
+```
+
+### Design Principles
+- **Minimal developer overhead:** Drop-in context managers and decorators.
+- **Framework agnostic:** Works with FastAPI, Django, or raw scripts.
+- **Vendor agnostic:** Does not wrap or depend on specific LLM provider SDKs.
+- **Explicit over magic:** Developers explicitly define trace boundaries.
+- **Existing observability first:** Propagates metadata to your existing tools (like OpenTelemetry) rather than acting as a standalone backend.
+- **Async-safe by default:** Thread-safe and async-safe context propagation.
+
 ### Features
-* **Application-level Instrumentation:** Instruments business operations instead of wrapping LLM SDKs, allowing the library to remain provider-agnostic.
 * **Automatic Metadata Discovery:** Detects release and runtime information from the execution environment through a pluggable metadata system.
+* **Application-level Instrumentation:** Instruments business operations instead of wrapping LLM SDKs, allowing the library to remain provider-agnostic.
 * **Integrations:** Natively exports into `structlog` (JSON logs) and OpenTelemetry.
 * **Async First:** Safe to use in high-throughput `asyncio` applications such as FastAPI.
 
@@ -37,13 +51,14 @@ pip install "ai-release-metadata[otel]"
 
 ## Usage
 
-Configure the SDK once at application startup using the `MetadataProvider`:
+Configure the SDK once at application startup using the `MetadataProvider`. 
+
+**Plugin Precedence Rules:** The SDK resolves metadata conflicts based on the order plugins are provided. The *last* plugin evaluated takes precedence over the preceding ones.
 
 ```python
 from ai_release_metadata import MetadataProvider
 from ai_release_metadata.plugins import EnvPlugin, GitPlugin
 
-# The last plugin overwrites any preceding values.
 # Here, GitPlugin wins if it successfully finds a local commit SHA.
 MetadataProvider(plugins=[EnvPlugin(), GitPlugin()])
 ```
@@ -62,7 +77,8 @@ async def generate_response(user_id: str, query: str):
         # Dynamically append runtime information to the context
         ctx = get_current_context()
         if ctx:
-            ctx.retrieved_documents = ["doc_1", "doc_2"]
+            ctx.add_document("doc_1")
+            ctx.add_tag("user_tier", "premium")
 ```
 
 All logs emitted within the `with release_context(...)` block will automatically have the metadata appended under the `ai` key.

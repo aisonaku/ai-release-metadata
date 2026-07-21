@@ -20,6 +20,14 @@ class ReleaseContext:
     tags: Dict[str, Any] = dataclasses.field(default_factory=dict)
     extra: Dict[str, Any] = dataclasses.field(default_factory=dict)
     
+    def add_document(self, document: str) -> None:
+        """Helper to append a retrieved document."""
+        self.retrieved_documents.append(document)
+        
+    def add_tag(self, key: str, value: Any) -> None:
+        """Helper to attach a runtime tag."""
+        self.tags[key] = value
+    
     def as_dict(self) -> Dict[str, Any]:
         """Convert to dictionary, excluding None or empty values."""
         result = {}
