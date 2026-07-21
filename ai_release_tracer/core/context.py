@@ -56,20 +56,48 @@ def ai_trace(
 def trace_generation(
     feature: Optional[str] = None,
     prompt_version: Optional[str] = None,
-    model: Optional[str] = None
+    model: Optional[str] = None,
+    experiment_flags: Optional[dict] = None,
+    tags: Optional[dict] = None,
+    auto_capture_args: bool = True
 ):
     """Decorator to wrap a function with an AI trace context."""
+    import inspect
+    
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        sig = inspect.signature(func)
+        
+        def _capture(trace, args, kwargs):
+            if trace:
+                if experiment_flags:
+                    trace.experiment_flags.update(experiment_flags)
+                if tags:
+                    trace.tags.update(tags)
+                    
+                if auto_capture_args:
+                    try:
+                        bound = sig.bind(*args, **kwargs)
+                        bound.apply_defaults()
+                        for k, v in bound.arguments.items():
+                            if isinstance(v, (str, int, float, bool)):
+                                trace.tags[f"arg_{k}"] = v
+                            else:
+                                trace.tags[f"arg_{k}"] = str(v)
+                    except Exception:
+                        pass
+
         if asyncio.iscoroutinefunction(func):
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
-                with ai_trace(feature=feature, prompt_version=prompt_version, model=model):
+                with ai_trace(feature=feature, prompt_version=prompt_version, model=model) as trace:
+                    _capture(trace, args, kwargs)
                     return await func(*args, **kwargs)
             return async_wrapper
         else:
             @wraps(func)
             def sync_wrapper(*args, **kwargs):
-                with ai_trace(feature=feature, prompt_version=prompt_version, model=model):
+                with ai_trace(feature=feature, prompt_version=prompt_version, model=model) as trace:
+                    _capture(trace, args, kwargs)
                     return func(*args, **kwargs)
             return sync_wrapper
     return decorator
