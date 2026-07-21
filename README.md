@@ -1,4 +1,4 @@
-# AI Release Tracer (ai-release-tracer)
+# AI Release Metadata (ai-release-metadata)
 
 A lightweight, framework-agnostic Python SDK for standardizing AI release metadata across production applications.
 
@@ -18,26 +18,25 @@ This SDK provides a minimal set of context managers and decorators that automati
 
 ### Features
 * **Zero Magic Wrapping:** Avoids wrapping underlying LLM clients, opting instead to wrap the application's business logic.
-* **Auto-Extraction:** Automatically extracts CI/CD variables (`GIT_COMMIT`, `ENVIRONMENT`, `DD_VERSION`) at startup.
+* **Auto-Extraction:** Automatically extracts CI/CD variables (`GIT_COMMIT`, `ENVIRONMENT`, `DD_VERSION`) at startup via a `Plugins` system.
 * **Integrations:** Natively exports into `structlog` (JSON logs) and OpenTelemetry (planned).
 * **Async First:** Safe to use in high-throughput `asyncio` applications such as FastAPI.
 
 ## Usage
 
-Configure the SDK once at application startup:
+Configure the SDK once at application startup using the `MetadataProvider`:
 
 ```python
-from ai_release_tracer import configure
-from ai_release_tracer.extractors.env import EnvExtractor
+from ai_release_metadata import MetadataProvider
+from ai_release_metadata.plugins.env import EnvPlugin
 
-# Automatically extracts GIT_COMMIT, ENVIRONMENT, etc.
-configure(extractors=[EnvExtractor()])
+MetadataProvider(plugins=[EnvPlugin()])
 ```
 
 Use the context manager (`ai_trace`) or decorator (`@trace_generation`) within the business logic:
 
 ```python
-from ai_release_tracer import ai_trace, get_current_trace
+from ai_release_metadata import ai_trace, get_current_trace
 
 async def generate_response(user_id: str, query: str):
     # Start a trace block
@@ -48,7 +47,7 @@ async def generate_response(user_id: str, query: str):
         # Dynamically append runtime information to the trace
         trace = get_current_trace()
         if trace:
-            trace.retrieved_documents = ["doc_1", "doc_2"]
+            trace.runtime.retrieved_documents = ["doc_1", "doc_2"]
 ```
 
 All logs emitted within the `with ai_trace(...)` block will automatically have the metadata appended under the `ai` key.

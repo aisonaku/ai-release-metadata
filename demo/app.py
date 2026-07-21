@@ -6,14 +6,14 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import asyncio
 
-from ai_release_tracer import (
-    configure, ai_trace, trace_generation
+from ai_release_metadata import (
+    MetadataProvider, ai_trace, trace_generation
 )
-from ai_release_tracer.extractors.env import EnvExtractor
-from ai_release_tracer.integrations.structlog import structlog_processor
+from ai_release_metadata.plugins.env import EnvPlugin
+from ai_release_metadata.integrations.structlog import structlog_processor
 
 # Initialize SDK configuration and extract environment variables
-configure(extractors=[EnvExtractor()])
+MetadataProvider(plugins=[EnvPlugin()])
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 log_format = os.environ.get("LOG_FORMAT", "json").lower()
 
@@ -21,7 +21,7 @@ processors = [
     structlog.stdlib.add_logger_name,
     structlog.stdlib.add_log_level,
     structlog.processors.TimeStamper(fmt="iso"),
-    structlog_processor, # Integrates ai_release_tracer metadata
+    structlog_processor, # Integrates ai_release_metadata metadata
 ]
 if log_format == "console":
     processors.append(structlog.dev.ConsoleRenderer())

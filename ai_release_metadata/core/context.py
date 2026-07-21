@@ -1,18 +1,19 @@
-import asyncio
 import contextvars
+import asyncio
 from contextlib import contextmanager
 from functools import wraps
 from typing import Optional, Generator, Callable, Any
+import copy
 
-from .models import AIReleaseMetadata
-from .config import AIReleaseConfig
+from .sdk import MetadataProvider
+from .models import ReleaseContext, RuntimeMetadata, AIInteractionMetadata
 
-# The ContextVar that holds the current trace metadata
-_current_trace: contextvars.ContextVar[Optional[AIReleaseMetadata]] = contextvars.ContextVar(
-    "ai_release_trace", default=None
+# A thread-safe, async-safe context variable to hold the current trace
+_current_trace: contextvars.ContextVar[Optional[ReleaseContext]] = contextvars.ContextVar(
+    "ai_release_metadata", default=None
 )
 
-def get_current_trace() -> Optional[AIReleaseMetadata]:
+def get_current_trace() -> Optional[ReleaseContext]:
     """Retrieve the active AI trace metadata from the current context."""
     return _current_trace.get()
 
@@ -21,31 +22,39 @@ def ai_trace(
     feature: Optional[str] = None,
     prompt_version: Optional[str] = None,
     model: Optional[str] = None
-) -> Generator[AIReleaseMetadata, None, None]:
+) -> Generator[ReleaseContext, None, None]:
     """Context manager to start a new AI trace and set it in the current context."""
     parent_trace = get_current_trace()
-    kwargs = AIReleaseConfig.get_base_metadata()
     
+    # 1. Base release metadata comes from the global MetadataProvider
+    release = MetadataProvider.get_global().get_base_metadata()
+    
+    # 2. Inherit runtime and ai from parent, or start fresh
     if parent_trace:
-        kwargs.update({
-            "feature": feature or parent_trace.feature,
-            "prompt_version": prompt_version or parent_trace.prompt_version,
-            "model": model or parent_trace.model,
-            "git_sha": parent_trace.git_sha,
-            "deployment_version": parent_trace.deployment_version,
-            "environment": parent_trace.environment,
-            "experiment_flags": parent_trace.experiment_flags.copy(),
-            "retrieved_documents": parent_trace.retrieved_documents.copy(),
-            "tags": parent_trace.tags.copy(),
-        })
-    else:
-        kwargs.update({
-            "feature": feature,
-            "prompt_version": prompt_version,
-            "model": model,
-        })
+        runtime = copy.deepcopy(parent_trace.runtime)
+        ai = copy.deepcopy(parent_trace.ai)
         
-    metadata = AIReleaseMetadata(**kwargs)
+        # Override AI fields if explicitly provided in this block
+        if feature:
+            ai.feature = feature
+        if prompt_version:
+            ai.prompt_version = prompt_version
+        if model:
+            ai.model = model
+            
+    else:
+        runtime = RuntimeMetadata()
+        ai = AIInteractionMetadata(
+            feature=feature,
+            prompt_version=prompt_version,
+            model=model
+        )
+        
+    metadata = ReleaseContext(
+        release=release,
+        runtime=runtime,
+        ai=ai
+    )
     
     token = _current_trace.set(metadata)
     try:
@@ -70,9 +79,9 @@ def trace_generation(
         def _capture(trace, args, kwargs):
             if trace:
                 if experiment_flags:
-                    trace.experiment_flags.update(experiment_flags)
+                    trace.runtime.experiment_flags.update(experiment_flags)
                 if tags:
-                    trace.tags.update(tags)
+                    trace.runtime.tags.update(tags)
                     
                 if auto_capture_args:
                     try:
@@ -80,9 +89,9 @@ def trace_generation(
                         bound.apply_defaults()
                         for k, v in bound.arguments.items():
                             if isinstance(v, (str, int, float, bool)):
-                                trace.tags[f"arg_{k}"] = v
+                                trace.runtime.tags[f"arg_{k}"] = v
                             else:
-                                trace.tags[f"arg_{k}"] = str(v)
+                                trace.runtime.tags[f"arg_{k}"] = str(v)
                     except Exception:
                         pass
 
