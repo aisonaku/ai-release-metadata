@@ -1,3 +1,20 @@
+Metadata-Version: 2.4
+Name: ai-release-metadata
+Version: 0.1.0
+Summary: A lightweight, framework-agnostic Python SDK for standardizing AI release metadata across production applications.
+Author-email: Oura <opensource@example.com>
+License: MIT
+Project-URL: Homepage, https://github.com/ai-release-metadata/ai-release-metadata
+Project-URL: Bug Tracker, https://github.com/ai-release-metadata/ai-release-metadata/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Provides-Extra: otel
+Requires-Dist: opentelemetry-api; extra == "otel"
+
 # AI Release Metadata (ai-release-metadata)
 
 > **The SDK standardizes and propagates AI release metadata across engineering systems. It does not collect, store, analyze, or visualize that metadata.**

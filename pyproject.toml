@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-release-metadata"
+version = "0.1.0"
+authors = [
+    { name="Oura", email="opensource@example.com" },
+]
+description = "A lightweight, framework-agnostic Python SDK for standardizing AI release metadata across production applications."
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.optional-dependencies]
+otel = ["opentelemetry-api"]
+
+[project.urls]
+"Homepage" = "https://github.com/ai-release-metadata/ai-release-metadata"
+"Bug Tracker" = "https://github.com/ai-release-metadata/ai-release-metadata/issues"
+
+[tool.setuptools.packages.find]
+include = ["ai_release_metadata*"]
