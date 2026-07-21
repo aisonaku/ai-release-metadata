@@ -8,27 +8,27 @@ import copy
 from .sdk import MetadataProvider
 from .models import ReleaseContext
 
-# A thread-safe, async-safe context variable to hold the current trace
-_current_trace: contextvars.ContextVar[Optional[ReleaseContext]] = contextvars.ContextVar(
+# A thread-safe, async-safe context variable to hold the current release context
+_current_context: contextvars.ContextVar[Optional[ReleaseContext]] = contextvars.ContextVar(
     "ai_release_metadata", default=None
 )
 
-def get_current_trace() -> Optional[ReleaseContext]:
-    """Retrieve the active AI trace metadata from the current context."""
-    return _current_trace.get()
+def get_current_context() -> Optional[ReleaseContext]:
+    """Retrieve the active AI release context metadata from the current execution."""
+    return _current_context.get()
 
 @contextmanager
-def ai_trace(
+def release_context(
     feature: Optional[str] = None,
     prompt_version: Optional[str] = None,
     model: Optional[str] = None
 ) -> Generator[ReleaseContext, None, None]:
-    """Context manager to start a new AI trace and set it in the current context."""
-    parent_trace = get_current_trace()
+    """Context manager to start a new AI release context block."""
+    parent_context = get_current_context()
     
-    if parent_trace:
-        # Deep copy to prevent modifying parent trace state
-        metadata = copy.deepcopy(parent_trace)
+    if parent_context:
+        # Deep copy to prevent modifying parent state
+        metadata = copy.deepcopy(parent_context)
         
         # Override fields if explicitly provided in this block
         if feature:
@@ -44,13 +44,13 @@ def ai_trace(
         metadata.prompt_version = prompt_version
         metadata.model = model
     
-    token = _current_trace.set(metadata)
+    token = _current_context.set(metadata)
     try:
         yield metadata
     finally:
-        _current_trace.reset(token)
+        _current_context.reset(token)
 
-def trace_generation(
+def capture_generation(
     feature: Optional[str] = None,
     prompt_version: Optional[str] = None,
     model: Optional[str] = None,
@@ -58,18 +58,18 @@ def trace_generation(
     tags: Optional[dict] = None,
     auto_capture_args: bool = True
 ):
-    """Decorator to wrap a function with an AI trace context."""
+    """Decorator to wrap a function with an AI release context."""
     import inspect
     
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         sig = inspect.signature(func)
         
-        def _capture(trace, args, kwargs):
-            if trace:
+        def _capture(ctx, args, kwargs):
+            if ctx:
                 if experiment_flags:
-                    trace.experiment_flags.update(experiment_flags)
+                    ctx.experiment_flags.update(experiment_flags)
                 if tags:
-                    trace.tags.update(tags)
+                    ctx.tags.update(tags)
                     
                 if auto_capture_args:
                     try:
@@ -77,24 +77,24 @@ def trace_generation(
                         bound.apply_defaults()
                         for k, v in bound.arguments.items():
                             if isinstance(v, (str, int, float, bool)):
-                                trace.tags[f"arg_{k}"] = v
+                                ctx.tags[f"arg_{k}"] = v
                             else:
-                                trace.tags[f"arg_{k}"] = str(v)
+                                ctx.tags[f"arg_{k}"] = str(v)
                     except Exception:
                         pass
 
         if asyncio.iscoroutinefunction(func):
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
-                with ai_trace(feature=feature, prompt_version=prompt_version, model=model) as trace:
-                    _capture(trace, args, kwargs)
+                with release_context(feature=feature, prompt_version=prompt_version, model=model) as ctx:
+                    _capture(ctx, args, kwargs)
                     return await func(*args, **kwargs)
             return async_wrapper
         else:
             @wraps(func)
             def sync_wrapper(*args, **kwargs):
-                with ai_trace(feature=feature, prompt_version=prompt_version, model=model) as trace:
-                    _capture(trace, args, kwargs)
+                with release_context(feature=feature, prompt_version=prompt_version, model=model) as ctx:
+                    _capture(ctx, args, kwargs)
                     return func(*args, **kwargs)
             return sync_wrapper
     return decorator

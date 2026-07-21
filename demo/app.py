@@ -7,7 +7,7 @@ from pydantic import BaseModel
 import asyncio
 
 from ai_release_metadata import (
-    MetadataProvider, ai_trace, trace_generation
+    MetadataProvider, release_context, capture_generation
 )
 from ai_release_metadata.plugins.env import EnvPlugin
 from ai_release_metadata.integrations.structlog import structlog_processor
@@ -41,7 +41,7 @@ class GenerateRequest(BaseModel):
 # ---------------------------------------------------------
 # Basic answer generation feature
 # ---------------------------------------------------------
-@trace_generation(feature="basic-answer", tags={"cost_center": "support"})
+@capture_generation(feature="basic-answer", tags={"cost_center": "support"})
 async def generate_basic_answer(query: str):
     logger.info("Generating basic answer...", provider="openai")
     await asyncio.sleep(0.3)
@@ -51,7 +51,7 @@ async def generate_basic_answer(query: str):
 # ---------------------------------------------------------
 # Comprehensive answer generation feature
 # ---------------------------------------------------------
-@trace_generation(
+@capture_generation(
     feature="comprehensive-answer", 
     experiment_flags={"use_deep_research": True}
 )
@@ -74,8 +74,8 @@ async def generate_comprehensive_answer(query: str):
 async def generate(req: GenerateRequest):
     logger.info("Received request")
     
-    # Initializes top-level trace context with API request parameters
-    with ai_trace(model=req.model, prompt_version=req.prompt_version):
+    # Initializes top-level context with API request parameters
+    with release_context(model=req.model, prompt_version=req.prompt_version):
         response = await generate_comprehensive_answer(req.user_query)
         
     return {"response": response}

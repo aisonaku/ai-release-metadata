@@ -3,13 +3,12 @@ from ai_release_metadata.plugins.env import EnvPlugin
 
 def test_env_plugin():
     os.environ["GIT_COMMIT"] = "abcdef"
-    os.environ["ENVIRONMENT"] = "production"
+    os.environ["ENVIRONMENT"] = "staging"
     
-    plugin = EnvPlugin()
-    metadata = plugin.extract()
-    
-    assert metadata["git_sha"] == "abcdef"
-    assert metadata["environment"] == "production"
+    extractor = EnvPlugin()
+    data = extractor.extract()
+    assert data["git_sha"] == "abcdef"
+    assert data["environment"] == "staging"
 
 def test_config_merging():
     os.environ["GIT_COMMIT"] = "123456"
@@ -17,8 +16,8 @@ def test_config_merging():
     MetadataProvider(plugins=[EnvPlugin()])
     
     # Re-evaluate logic to ensure context propagation still works under new config
-    from ai_release_metadata.core.context import ai_trace, get_current_trace
-    with ai_trace(feature="demo"):
-        trace = get_current_trace()
-        assert trace.feature == "demo"
-        assert trace.git_sha == "123456"
+    from ai_release_metadata.core.context import release_context, get_current_context
+    with release_context(feature="demo"):
+        ctx = get_current_context()
+        assert ctx.feature == "demo"
+        assert ctx.git_sha == "123456"

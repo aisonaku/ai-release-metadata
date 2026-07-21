@@ -19,8 +19,8 @@ While existing observability platforms effectively capture execution metrics suc
 This SDK provides a minimal set of context managers and decorators that automatically enrich existing logs, metrics, and traces with standardized release and environment metadata.
 
 ### Features
-* **Zero Magic Wrapping:** Avoids wrapping underlying LLM clients, opting instead to wrap the application's business logic.
-* **Auto-Extraction:** Automatically extracts CI/CD variables (`GIT_COMMIT`, `ENVIRONMENT`, `DD_VERSION`) at startup via a `Plugins` system.
+* **Application-level Instrumentation:** Instruments business operations instead of wrapping LLM SDKs, allowing the library to remain provider-agnostic.
+* **Automatic Metadata Discovery:** Detects release and runtime information from the execution environment through a pluggable metadata system.
 * **Integrations:** Natively exports into `structlog` (JSON logs) and OpenTelemetry (planned).
 * **Async First:** Safe to use in high-throughput `asyncio` applications such as FastAPI.
 
@@ -35,24 +35,24 @@ from ai_release_metadata.plugins.env import EnvPlugin
 MetadataProvider(plugins=[EnvPlugin()])
 ```
 
-Use the context manager (`ai_trace`) or decorator (`@trace_generation`) within the business logic:
+Use the context manager (`release_context`) or decorator (`@capture_generation`) within the business logic:
 
 ```python
-from ai_release_metadata import ai_trace, get_current_trace
+from ai_release_metadata import release_context, get_current_context
 
 async def generate_response(user_id: str, query: str):
-    # Start a trace block
-    with ai_trace(feature="customer-support", model="gpt-4o", prompt_version="v2.1"):
+    # Start a release context block
+    with release_context(feature="customer-support", model="gpt-4o", prompt_version="v2.1"):
         
         # ... LLM calling logic ...
         
-        # Dynamically append runtime information to the trace
-        trace = get_current_trace()
-        if trace:
-            trace.retrieved_documents = ["doc_1", "doc_2"]
+        # Dynamically append runtime information to the context
+        ctx = get_current_context()
+        if ctx:
+            ctx.retrieved_documents = ["doc_1", "doc_2"]
 ```
 
-All logs emitted within the `with ai_trace(...)` block will automatically have the metadata appended under the `ai` key.
+All logs emitted within the `with release_context(...)` block will automatically have the metadata appended under the `ai` key.
 
 ## Running the Demo
 
