@@ -1,5 +1,7 @@
 # AI Release Metadata (ai-release-metadata)
 
+> **The SDK standardizes and propagates AI release metadata across engineering systems. It does not collect, store, analyze, or visualize that metadata.**
+
 A lightweight, framework-agnostic Python SDK for standardizing AI release metadata across production applications.
 
 ## The Problem
@@ -47,7 +49,7 @@ async def generate_response(user_id: str, query: str):
         # Dynamically append runtime information to the trace
         trace = get_current_trace()
         if trace:
-            trace.runtime.retrieved_documents = ["doc_1", "doc_2"]
+            trace.retrieved_documents = ["doc_1", "doc_2"]
 ```
 
 All logs emitted within the `with ai_trace(...)` block will automatically have the metadata appended under the `ai` key.

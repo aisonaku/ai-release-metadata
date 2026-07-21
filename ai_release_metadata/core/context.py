@@ -6,7 +6,7 @@ from typing import Optional, Generator, Callable, Any
 import copy
 
 from .sdk import MetadataProvider
-from .models import ReleaseContext, RuntimeMetadata, AIInteractionMetadata
+from .models import ReleaseContext
 
 # A thread-safe, async-safe context variable to hold the current trace
 _current_trace: contextvars.ContextVar[Optional[ReleaseContext]] = contextvars.ContextVar(
@@ -26,35 +26,23 @@ def ai_trace(
     """Context manager to start a new AI trace and set it in the current context."""
     parent_trace = get_current_trace()
     
-    # 1. Base release metadata comes from the global MetadataProvider
-    release = MetadataProvider.get_global().get_base_metadata()
-    
-    # 2. Inherit runtime and ai from parent, or start fresh
     if parent_trace:
-        runtime = copy.deepcopy(parent_trace.runtime)
-        ai = copy.deepcopy(parent_trace.ai)
+        # Deep copy to prevent modifying parent trace state
+        metadata = copy.deepcopy(parent_trace)
         
-        # Override AI fields if explicitly provided in this block
+        # Override fields if explicitly provided in this block
         if feature:
-            ai.feature = feature
+            metadata.feature = feature
         if prompt_version:
-            ai.prompt_version = prompt_version
+            metadata.prompt_version = prompt_version
         if model:
-            ai.model = model
-            
+            metadata.model = model
     else:
-        runtime = RuntimeMetadata()
-        ai = AIInteractionMetadata(
-            feature=feature,
-            prompt_version=prompt_version,
-            model=model
-        )
-        
-    metadata = ReleaseContext(
-        release=release,
-        runtime=runtime,
-        ai=ai
-    )
+        # 1. Base release metadata comes from the global MetadataProvider
+        metadata = MetadataProvider.get_global().get_base_metadata()
+        metadata.feature = feature
+        metadata.prompt_version = prompt_version
+        metadata.model = model
     
     token = _current_trace.set(metadata)
     try:
@@ -79,9 +67,9 @@ def trace_generation(
         def _capture(trace, args, kwargs):
             if trace:
                 if experiment_flags:
-                    trace.runtime.experiment_flags.update(experiment_flags)
+                    trace.experiment_flags.update(experiment_flags)
                 if tags:
-                    trace.runtime.tags.update(tags)
+                    trace.tags.update(tags)
                     
                 if auto_capture_args:
                     try:
@@ -89,9 +77,9 @@ def trace_generation(
                         bound.apply_defaults()
                         for k, v in bound.arguments.items():
                             if isinstance(v, (str, int, float, bool)):
-                                trace.runtime.tags[f"arg_{k}"] = v
+                                trace.tags[f"arg_{k}"] = v
                             else:
-                                trace.runtime.tags[f"arg_{k}"] = str(v)
+                                trace.tags[f"arg_{k}"] = str(v)
                     except Exception:
                         pass
 

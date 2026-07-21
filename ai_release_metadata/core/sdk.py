@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 import copy
 
 from ..plugins.base import Plugin
-from .models import ReleaseMetadata
+from .models import ReleaseContext
 
 class MetadataProvider:
     """Instanced SDK Manager. Registers itself as the global provider upon instantiation."""
@@ -11,7 +11,7 @@ class MetadataProvider:
     
     def __init__(self, plugins: Optional[List[Plugin]] = None):
         self.plugins = plugins or []
-        self.base_metadata = ReleaseMetadata()
+        self.base_metadata = ReleaseContext()
         self._evaluate_plugins()
         
         # OpenTelemetry pattern: registering as the global instance implicitly
@@ -37,6 +37,6 @@ class MetadataProvider:
             return cls()
         return cls._global_instance
         
-    def get_base_metadata(self) -> ReleaseMetadata:
+    def get_base_metadata(self) -> ReleaseContext:
         """Return a deep copy of the base metadata for trace injection."""
         return copy.deepcopy(self.base_metadata)

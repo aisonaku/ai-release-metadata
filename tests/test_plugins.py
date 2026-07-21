@@ -20,5 +20,5 @@ def test_config_merging():
     from ai_release_metadata.core.context import ai_trace, get_current_trace
     with ai_trace(feature="demo"):
         trace = get_current_trace()
-        assert trace.ai.feature == "demo"
-        assert trace.release.git_sha == "123456"
+        assert trace.feature == "demo"
+        assert trace.git_sha == "123456"
