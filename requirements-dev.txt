@@ -1,2 +1,7 @@
 pytest
 pytest-asyncio
+structlog
+fastapi
+uvicorn
+pydantic
+opentelemetry-api

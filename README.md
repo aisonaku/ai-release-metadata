@@ -21,7 +21,7 @@ This SDK provides a minimal set of context managers and decorators that automati
 ### Features
 * **Application-level Instrumentation:** Instruments business operations instead of wrapping LLM SDKs, allowing the library to remain provider-agnostic.
 * **Automatic Metadata Discovery:** Detects release and runtime information from the execution environment through a pluggable metadata system.
-* **Integrations:** Natively exports into `structlog` (JSON logs) and OpenTelemetry (planned).
+* **Integrations:** Natively exports into `structlog` (JSON logs) and OpenTelemetry.
 * **Async First:** Safe to use in high-throughput `asyncio` applications such as FastAPI.
 
 ## Usage
@@ -53,6 +53,24 @@ async def generate_response(user_id: str, query: str):
 ```
 
 All logs emitted within the `with release_context(...)` block will automatically have the metadata appended under the `ai` key.
+
+### OpenTelemetry Integration
+
+If you use OpenTelemetry, you can automatically enrich the currently active span with the release context. It gracefully ignores spans if none are active.
+
+```python
+from ai_release_metadata.integrations.opentelemetry import enrich_span
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
+with tracer.start_as_current_span("generate_response") as span:
+    with release_context(model="gpt-4o"):
+        # Enrich the span with git_sha, environment, model, etc.
+        enrich_span()
+        
+        # ... LLM calling logic ...
+```
 
 ## Running the Demo
 
