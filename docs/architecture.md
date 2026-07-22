@@ -10,7 +10,7 @@ sequenceDiagram
     participant SDK as MetadataProvider
     participant Plugin as MetadataPlugins
     participant CTX as ContextVars
-    participant Exp as Exporters (e.g., OpenTelemetry)
+    participant Exp as "Exporters (e.g., OpenTelemetry)"
 
     App->>SDK: MetadataProvider(plugins=[...])
     SDK->>Plugin: extract()

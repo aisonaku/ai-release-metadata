@@ -2,29 +2,48 @@ name: CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "main" ]
   workflow_dispatch:
 
 jobs:
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        # Fetching full history ensures the GitPlugin tests have a real .git folder to read
+        fetch-depth: 0 
+        
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12"
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
         
-    - name: Test with pytest
+        # Install the SDK itself with OpenTelemetry extras
+        pip install -e ".[otel]"
+        
+        # Install testing and demo dependencies
+        pip install pytest fastapi structlog pydantic httpx
+        
+    - name: Run Unit, Integration, and E2E Tests
       env:
         PYTHONPATH: .
       run: |
-        pytest -v
+        # Pytest will automatically discover and run all 3 levels of tests:
+        # 1. Unit Tests (test_context.py, test_plugins.py)
+        # 2. Integration Tests (test_integrations.py)
+        # 3. End-to-End Tests (test_e2e_fastapi.py)
+        pytest -v tests/

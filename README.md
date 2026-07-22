@@ -1,5 +1,7 @@
 # AI Release Metadata (ai-release-metadata)
 
+[![CI](https://github.com/yourusername/ai-release-metadata/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/ai-release-metadata/actions/workflows/ci.yml)
+
 > **A lightweight SDK for propagating standardized AI release metadata through existing observability systems.**
 
 ## The Problem
@@ -20,8 +22,8 @@ This SDK provides a minimal set of context managers and decorators that automati
 
 ```mermaid
 flowchart LR
-    Sources[Metadata Sources\n(Git, Env, GitHub)] --> Context((Release Context))
-    Context --> Exporters[Exporters\n(Structlog, OpenTelemetry)]
+    Sources["Metadata Sources<br/>(Git, Env, GitHub)"] --> Context(("Release Context"))
+    Context --> Exporters["Exporters<br/>(Structlog, OpenTelemetry)"]
 ```
 
 ### Design Principles
