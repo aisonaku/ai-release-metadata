@@ -9,11 +9,16 @@ import asyncio
 from ai_release_metadata import (
     MetadataProvider, release_context, capture_generation
 )
-from ai_release_metadata.plugins.env import EnvPlugin
+from ai_release_metadata.plugins import EnvPlugin, GitPlugin, GitHubActionsPlugin
 from ai_release_metadata.integrations.structlog import structlog_processor
 
-# Initialize SDK configuration and extract environment variables
-MetadataProvider(plugins=[EnvPlugin()])
+# Initialize SDK configuration.
+# Plugins are evaluated in order. The environment explicitly overwrites local Git state.
+MetadataProvider(plugins=[
+    GitPlugin(),
+    GitHubActionsPlugin(),
+    EnvPlugin()
+])
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 log_format = os.environ.get("LOG_FORMAT", "json").lower()
 

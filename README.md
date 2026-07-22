@@ -53,14 +53,16 @@ pip install "ai-release-metadata[otel]"
 
 Configure the SDK once at application startup using the `MetadataProvider`. 
 
-**Plugin Precedence Rules:** The SDK resolves metadata conflicts based on the order plugins are provided. The *last* plugin evaluated takes precedence over the preceding ones.
+**Plugin Precedence Rules:** The SDK resolves metadata conflicts based on the order plugins are provided. The *last* plugin evaluated takes precedence over the preceding ones. We recommend putting local plugins first, and explicit environment plugins last.
 
 ```python
 from ai_release_metadata import MetadataProvider
-from ai_release_metadata.plugins import EnvPlugin, GitPlugin
+from ai_release_metadata.plugins import EnvPlugin, GitPlugin, GitHubActionsPlugin
 
-# Here, GitPlugin wins if it successfully finds a local commit SHA.
-MetadataProvider(plugins=[EnvPlugin(), GitPlugin()])
+# 1. GitPlugin tries to guess from local filesystem
+# 2. GitHubActionsPlugin overwrites with CI variables
+# 3. EnvPlugin overwrites with explicit user-defined env vars
+MetadataProvider(plugins=[GitPlugin(), GitHubActionsPlugin(), EnvPlugin()])
 ```
 
 Use the context manager (`release_context`) or decorator (`@capture_generation`) within the business logic:
