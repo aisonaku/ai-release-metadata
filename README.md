@@ -1,8 +1,6 @@
 # AI Release Metadata (ai-release-metadata)
 
-[![CI](https://github.com/yourusername/ai-release-metadata/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/ai-release-metadata/actions/workflows/ci.yml)
-
-> **A lightweight SDK for propagating standardized AI release metadata through existing observability systems.**
+> **A lightweight SDK for standardizing and propagating operational metadata for AI-powered services through existing observability systems.**
 
 ## The Problem
 
@@ -21,13 +19,18 @@ This SDK provides a minimal set of context managers and decorators that automati
 ### Architecture
 
 ```mermaid
-flowchart LR
-    Sources["Metadata Sources<br/>(Git, Env, GitHub)"] --> Context(("Release Context"))
-    Context --> Exporters["Exporters<br/>(Structlog, OpenTelemetry)"]
+flowchart TD
+    App[Application] -->|with release_context()| Provider[MetadataProvider]
+    Provider -->|extract| Plugins["Plugins (Git, Env)"]
+    Plugins --> Context(("Release Context"))
+    Context -->|get_current_context()| Exporters["Exporters"]
+    Exporters --> OTEL["OpenTelemetry / Structlog"]
 ```
 
 ### Design Principles
 - **Minimal developer overhead:** Drop-in context managers and decorators.
+- **Existing Observability First:** Integrates directly into your current logging/tracing pipelines instead of requiring a new dashboard.
+- **A reusable building block:** This explores one reusable approach for improving traceability between production behaviour and deployed AI releases.
 - **Framework agnostic:** Works with FastAPI, Django, or raw scripts.
 - **Vendor agnostic:** Does not wrap or depend on specific LLM provider SDKs.
 - **Explicit over magic:** Developers explicitly define trace boundaries.

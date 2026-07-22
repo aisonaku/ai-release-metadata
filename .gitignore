@@ -23,3 +23,11 @@ htmlcov/
 .vscode/
 .idea/
 .DS_Store
+
+# macOS
+__MACOSX/
+
+# Distribution
+dist/
+build/
+*.egg-info/
