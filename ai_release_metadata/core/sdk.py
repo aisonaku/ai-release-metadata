@@ -1,5 +1,6 @@
 from typing import List, Optional, Dict, Any
 import copy
+import logging
 
 from ..plugins.base import MetadataPlugin
 from .models import ReleaseContext
@@ -10,6 +11,9 @@ class MetadataProvider:
     _global_instance = None
     
     def __init__(self, plugins: Optional[List[MetadataPlugin]] = None):
+        if MetadataProvider._global_instance is not None:
+            logging.warning("MetadataProvider is being instantiated multiple times. This will overwrite the global metadata state.")
+            
         self.plugins = plugins or []
         self.base_metadata = ReleaseContext()
         self._evaluate_plugins()

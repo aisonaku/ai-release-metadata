@@ -5,9 +5,7 @@
 ## The Problem
 
 When a production issue occurs in an AI-powered service (e.g., regressions, prompt injection, or unexpected model behaviour), it is often extremely difficult to quickly identify:
-* Which prompt version generated the response?
-* Which model was used?
-* Which Git commit or deployment version is responsible?
+* Which prompt version, model, deployment, or source revision was associated with this request?
 * What experiments were active?
 
 While existing observability platforms effectively capture execution metrics such as latency and token usage, manually correlating these spans back to the exact release configuration often results in fragmented and inconsistent metadata.
@@ -38,7 +36,8 @@ flowchart TD
 - **Async-safe by default:** Thread-safe and async-safe context propagation.
 
 ### Features
-* **Automatic Metadata Discovery:** Detects release and runtime information from the execution environment through a pluggable metadata system.
+* **Automatic Infrastructure Metadata Discovery:** Detects deployment metadata such as Git revision, CI/CD information, and environment configuration through pluggable collectors.
+* **Application Metadata Propagation:** Standardizes and propagates AI-specific metadata—such as model, prompt version, feature name, or experiment ID—provided by the application or optional framework integrations.
 * **Application-level Instrumentation:** Instruments business operations instead of wrapping LLM SDKs, allowing the library to remain provider-agnostic.
 * **Integrations:** Natively exports into `structlog` (JSON logs) and OpenTelemetry.
 * **Async First:** Safe to use in high-throughput `asyncio` applications such as FastAPI.

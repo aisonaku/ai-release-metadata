@@ -33,16 +33,19 @@ def test_github_actions_plugin(monkeypatch):
     
     assert data["git_sha"] == "gha123"
     assert data["deployment_version"] == "gha-9876"
-    assert data["environment"] == "main"
+    assert data["git_branch"] == "main"
 
 def test_git_plugin_mocked(monkeypatch):
     import subprocess
     
     # Mock subprocess.run to simulate a valid git repo
-    def mock_run(*args, **kwargs):
+    def mock_run(args, **kwargs):
         class MockResult:
-            stdout = "mock-sha-890\n"
-        return MockResult()
+            def __init__(self, stdout):
+                self.stdout = stdout
+        if "--abbrev-ref" in args:
+            return MockResult("mock-branch\n")
+        return MockResult("mock-sha-890\n")
         
     monkeypatch.setattr(subprocess, "run", mock_run)
     
@@ -51,6 +54,7 @@ def test_git_plugin_mocked(monkeypatch):
     data = plugin.extract()
     
     assert data["git_sha"] == "mock-sha-890"
+    assert data["git_branch"] == "mock-branch"
 
 def test_custom_plugin_extra_fields():
     from typing import Dict, Any

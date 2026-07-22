@@ -1,3 +1,0 @@
-
-[otel]
-opentelemetry-api

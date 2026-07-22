@@ -7,7 +7,8 @@ The SDK uses a flattened `ReleaseContext` dataclass to ensure maximum compatibil
 | Field | Type | Description | Discovered By |
 |-------|------|-------------|---------------|
 | `git_sha` | string | The commit hash of the deployed code. | Plugins (Env, Git, GitHub) |
-| `environment` | string | The deployment environment (e.g., `production`, `staging`). | Plugins (Env, GitHub) |
+| `git_branch` | string | The active git branch or ref name. | Plugins (Git, GitHub) |
+| `environment` | string | The deployment environment (e.g., `production`, `staging`). | Plugins (Env) |
 | `deployment_version` | string | An arbitrary release tag or CI run ID. | Plugins (Env, GitHub) |
 | `feature` | string | The business feature triggering the AI call. | `@capture_generation` / `release_context` |
 | `model` | string | The AI model used (e.g., `gpt-4o`). | `@capture_generation` / `release_context` |

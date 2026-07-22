@@ -17,7 +17,8 @@ class GitHubActionsPlugin(MetadataPlugin):
             metadata["deployment_version"] = f"gha-{run_id}"
             
         # GITHUB_REF_NAME is the branch or tag name
-        if ref := os.environ.get("GITHUB_REF_NAME"):
-            metadata["environment"] = ref
+        ref_name = os.environ.get("GITHUB_REF_NAME")
+        if ref_name:
+            metadata["git_branch"] = ref_name
             
         return metadata

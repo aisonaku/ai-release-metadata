@@ -11,6 +11,7 @@ class ReleaseContext:
     
     # Automatically extracted
     git_sha: Optional[str] = None
+    git_branch: Optional[str] = None
     deployment_version: Optional[str] = None
     environment: Optional[str] = None
     
