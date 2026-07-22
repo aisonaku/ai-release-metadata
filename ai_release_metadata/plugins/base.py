@@ -1,12 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, Protocol
 
-class Plugin(ABC):
-    """Base class for all AI Release metadata plugins."""
+class MetadataPlugin(Protocol):
+    """Protocol for all AI Release metadata discovery plugins."""
     
-    @abstractmethod
     def extract(self) -> Dict[str, Any]:
         """Extract metadata and return it as a dictionary.
         This dictionary will be merged into the ReleaseMetadata on startup.
         """
-        pass
+        ...

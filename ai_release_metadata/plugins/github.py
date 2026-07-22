@@ -1,8 +1,8 @@
 import os
 from typing import Dict, Any
-from .base import Plugin
+from .base import MetadataPlugin
 
-class GitHubActionsPlugin(Plugin):
+class GitHubActionsPlugin(MetadataPlugin):
     """Extracts metadata specific to GitHub Actions environment variables."""
     
     def extract(self) -> Dict[str, Any]:

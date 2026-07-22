@@ -1,8 +1,8 @@
 import os
 from typing import Dict, Any
-from .base import Plugin
+from .base import MetadataPlugin
 
-class EnvPlugin(Plugin):
+class EnvPlugin(MetadataPlugin):
     """Extracts metadata from environment variables."""
     
     def extract(self) -> Dict[str, Any]:

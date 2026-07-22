@@ -51,3 +51,26 @@ def test_git_plugin_mocked(monkeypatch):
     data = plugin.extract()
     
     assert data["git_sha"] == "mock-sha-890"
+
+def test_custom_plugin_extra_fields():
+    from typing import Dict, Any
+    
+    class CustomCompanyPlugin:
+        def extract(self) -> Dict[str, Any]:
+            return {
+                "git_sha": "custom123",
+                "company_org": "finance",
+                "cost_center": "4455"
+            }
+            
+    from ai_release_metadata.core.sdk import MetadataProvider
+    provider = MetadataProvider(plugins=[CustomCompanyPlugin()])
+    
+    base_meta = provider.get_base_metadata()
+    
+    # Core field should be mapped
+    assert base_meta.git_sha == "custom123"
+    
+    # Unknown fields should be dumped into 'extra'
+    assert base_meta.extra["company_org"] == "finance"
+    assert base_meta.extra["cost_center"] == "4455"

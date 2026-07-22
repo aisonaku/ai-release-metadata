@@ -1,8 +1,8 @@
 import subprocess
 from typing import Dict, Any
-from .base import Plugin
+from .base import MetadataPlugin
 
-class GitPlugin(Plugin):
+class GitPlugin(MetadataPlugin):
     """Extracts metadata from the local Git repository using subprocess."""
     
     def extract(self) -> Dict[str, Any]:

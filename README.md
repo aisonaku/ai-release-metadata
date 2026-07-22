@@ -38,6 +38,23 @@ flowchart LR
 * **Integrations:** Natively exports into `structlog` (JSON logs) and OpenTelemetry.
 * **Async First:** Safe to use in high-throughput `asyncio` applications such as FastAPI.
 
+## Use Cases
+
+### 1. Diagnosing Latency Regressions by Git Commit
+If latency spikes on a specific LLM feature, you can query Datadog/Grafana for all `generate` traces grouped by `ai.git_sha`. The SDK ensures this metadata is accurately attached to every span, instantly identifying the deployment that caused the regression.
+
+### 2. A/B Testing Prompt Templates
+When rolling out a new prompt (e.g. `prompt_version="v2.1"`), you can seamlessly track the token usage, error rates, and user feedback specifically for that variant.
+
+## Documentation
+
+- [Architecture](docs/architecture.md): How context propagation works under the hood.
+- [Design Decisions](docs/design-decisions.md): The rationale behind the core architectural choices.
+- [Metadata Schema](docs/metadata-schema.md): The full list of supported fields.
+- [Plugin Development](docs/plugin-development.md): How to build custom discovery sources.
+- [Exporters](docs/exporters.md): How to export data to OpenTelemetry, structlog, and more.
+- [Roadmap](docs/roadmap.md): Future development ideas and planned integrations.
+
 ## Installation
 
 ```bash

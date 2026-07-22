@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 import copy
 
-from ..plugins.base import Plugin
+from ..plugins.base import MetadataPlugin
 from .models import ReleaseContext
 
 class MetadataProvider:
@@ -9,7 +9,7 @@ class MetadataProvider:
     
     _global_instance = None
     
-    def __init__(self, plugins: Optional[List[Plugin]] = None):
+    def __init__(self, plugins: Optional[List[MetadataPlugin]] = None):
         self.plugins = plugins or []
         self.base_metadata = ReleaseContext()
         self._evaluate_plugins()
