@@ -59,3 +59,19 @@ def test_otel_enrich_span_no_active_context():
     span = MockSpan()
     enrich_span(span)
     assert not span.attributes # Should do nothing without crashing
+
+def test_otel_span_processor():
+    try:
+        from ai_release_metadata.integrations.opentelemetry import ReleaseMetadataSpanProcessor
+    except ImportError:
+        pytest.skip("opentelemetry-sdk not installed")
+        
+    processor = ReleaseMetadataSpanProcessor()
+    span = MockSpan()
+    
+    with release_context(feature="auto-instrumented", model="gpt-3.5"):
+        # Simulate an auto-instrumentation library starting a span
+        processor.on_start(span)
+        
+    assert span.attributes["ai.feature"] == "auto-instrumented"
+    assert span.attributes["ai.model"] == "gpt-3.5"

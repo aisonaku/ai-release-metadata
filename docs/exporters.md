@@ -16,6 +16,20 @@ with tracer.start_as_current_span("generate_response"):
         enrich_span()
 ```
 
+#### The Span Processor Pattern (Auto-Instrumentation)
+If you rely heavily on OpenTelemetry auto-instrumentation (e.g. FastAPI, HTTPX, OpenAI SDK integrations), you can avoid calling `enrich_span()` manually by registering the provided `ReleaseMetadataSpanProcessor`. This interceptor automatically injects the active release metadata into *every* auto-instrumented span that starts within a `release_context` block.
+
+**Usage:**
+```python
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from ai_release_metadata.integrations.opentelemetry import ReleaseMetadataSpanProcessor
+
+provider = TracerProvider()
+provider.add_span_processor(ReleaseMetadataSpanProcessor())
+trace.set_tracer_provider(provider)
+```
+
 ### Structlog
 The Structlog integration is implemented as a standard **Log Processor**. It intercepts log events and appends the serialized context under the `ai` key.
 

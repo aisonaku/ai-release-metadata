@@ -25,13 +25,19 @@ class MetadataProvider:
         """Run all registered plugins and populate base_metadata."""
         extra = {}
         for plugin in self.plugins:
-            result = plugin.extract()
-            # Map known fields, dump the rest into extra
-            for k, v in result.items():
-                if hasattr(self.base_metadata, k) and k != "extra":
-                    setattr(self.base_metadata, k, v)
-                else:
-                    extra[k] = v
+            try:
+                result = plugin.extract()
+                # Map known fields, dump the rest into extra
+                for k, v in result.items():
+                    if hasattr(self.base_metadata, k) and k != "extra":
+                        setattr(self.base_metadata, k, v)
+                    else:
+                        extra[k] = v
+            except Exception as e:
+                logging.warning(
+                    f"MetadataPlugin '{plugin.__class__.__name__}' failed during extraction: {e}. "
+                    "Skipping this plugin to prevent application boot failure."
+                )
         self.base_metadata.extra = extra
         
     @classmethod

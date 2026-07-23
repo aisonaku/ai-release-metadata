@@ -40,3 +40,27 @@ def enrich_span(span: trace.Span = None) -> None:
             span.set_attribute(f"ai.{key}", value)
         else:
             span.set_attribute(f"ai.{key}", str(value))
+
+
+try:
+    from opentelemetry.sdk.trace import SpanProcessor
+    
+    class ReleaseMetadataSpanProcessor(SpanProcessor):
+        """
+        An OpenTelemetry SpanProcessor that automatically injects the active
+        ai_release_metadata context into every span created by auto-instrumentation 
+        (e.g., FastAPI, Requests, OpenAI SDKs).
+        """
+        def on_start(self, span: trace.Span, parent_context=None):
+            # enrich_span safely grabs the current context and flattens it 
+            # into the provided span before the span is emitted.
+            enrich_span(span)
+            
+        def on_end(self, span):
+            # Guarantee that any metadata mutations (tags, experiment flags) added 
+            # *after* the span started are flushed to the span before it exports.
+            enrich_span(span)
+            
+except ImportError:
+    # If opentelemetry-sdk is not installed, we ignore the processor definition.
+    pass
