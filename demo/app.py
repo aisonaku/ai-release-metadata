@@ -10,6 +10,7 @@ from ai_release_metadata import (
     MetadataProvider, release_context, capture_generation
 )
 from ai_release_metadata.plugins import EnvPlugin, GitPlugin, GitHubActionsPlugin
+from ai_release_metadata.prompts import LocalFilePromptProvider
 from ai_release_metadata.integrations.structlog import structlog_processor
 
 # Initialize SDK configuration.
@@ -21,6 +22,10 @@ MetadataProvider(plugins=[
 ])
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 log_format = os.environ.get("LOG_FORMAT", "json").lower()
+
+prompt_provider = LocalFilePromptProvider(
+    base_dir=os.path.join(os.path.dirname(__file__), "prompts")
+)
 
 processors = [
     structlog.stdlib.add_logger_name,
@@ -40,7 +45,6 @@ app = FastAPI(title="AI Release Tracer Demo")
 
 class GenerateRequest(BaseModel):
     model: str = "gpt-4o"
-    prompt_version: str = "v1.0"
     user_query: str
 
 # ---------------------------------------------------------
@@ -80,7 +84,13 @@ async def generate(req: GenerateRequest):
     logger.info("Received request")
     
     # Initializes top-level context with API request parameters
-    with release_context(model=req.model, prompt_version=req.prompt_version):
+    with release_context(model=req.model):
+        
+        # Load the prompt - this automatically calculates the SHA-256 hash 
+        # and seamlessly injects it into the active ReleaseContext!
+        system_prompt = prompt_provider.get_prompt("system_instructions")
+        logger.info("Loaded system prompt")
+        
         response = await generate_comprehensive_answer(req.user_query)
         
     return {"response": response}

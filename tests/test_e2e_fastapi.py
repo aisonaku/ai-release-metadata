@@ -38,7 +38,6 @@ def test_fastapi_e2e_flow(e2e_env, caplog):
         "/generate",
         json={
             "model": "gpt-4o",
-            "prompt_version": "v1.0",
             "user_query": "hello"
         }
     )
@@ -64,7 +63,9 @@ def test_fastapi_e2e_flow(e2e_env, caplog):
             
             # Assert Top-Level Request Context propagated (from app.post)
             assert ai_meta.get("model") == "gpt-4o"
-            assert ai_meta.get("prompt_version") == "v1.0"
+            
+            # Assert Auto-Injected Context propagated (from LocalFilePromptProvider)
+            assert ai_meta.get("prompt_version", "").startswith("sha256-")
             
             # Assert Decorator Context propagated (from @capture_generation)
             assert ai_meta.get("feature") == "comprehensive-answer"

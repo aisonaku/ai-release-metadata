@@ -38,6 +38,7 @@ flowchart TD
 ### Features
 * **Automatic Infrastructure Metadata Discovery:** Detects deployment metadata such as Git revision, CI/CD information, and environment configuration through pluggable collectors.
 * **Application Metadata Propagation:** Standardizes and propagates AI-specific metadata—such as model, prompt version, feature name, or experiment ID—provided by the application or optional framework integrations.
+* **Automated Prompt Versioning:** Abstract `PromptProvider` protocol allows automatic extraction of prompt UUIDs (from internal registries) or dynamic SHA-256 calculation (from local files) with zero boilerplate in the LLM application code.
 * **Application-level Instrumentation:** Instruments business operations instead of wrapping LLM SDKs, allowing the library to remain provider-agnostic.
 * **Integrations:** Natively exports into `structlog` (JSON logs) and OpenTelemetry.
 * **Async First:** Safe to use in high-throughput `asyncio` applications such as FastAPI.
@@ -105,6 +106,34 @@ async def generate_response(user_id: str, query: str):
 ```
 
 All logs emitted within the `with release_context(...)` block will automatically have the metadata appended under the `ai` key.
+
+### Automated Prompt Versioning
+
+Manually keeping `prompt_version="v2.1"` in sync with your prompt text is error-prone. The SDK provides a unified `PromptProvider` abstraction to automatically extract prompt strings and inject their version directly into the tracing context.
+
+**1. Using the Local File Provider (Auto-Hashing)**
+If you store prompts as `.txt` files locally, the SDK can read the file and inject a deterministic SHA-256 hash automatically.
+```python
+from ai_release_metadata.prompts import LocalFilePromptProvider
+
+provider = LocalFilePromptProvider(base_dir="prompts")
+
+with release_context(model="gpt-4o"):
+    # Fetches the text and automatically binds "sha256-a1b2c3d4" to the context
+    prompt = provider.get_prompt("system_instructions")
+```
+
+**2. Integrating with a Cloud Registry**
+If your team uses an internal Prompt Hub or an enterprise registry (like LangSmith or Braintrust), simply extend the `BasePromptProvider` to automatically inject the registry's UUID instead of a local hash.
+```python
+from ai_release_metadata.prompts import BasePromptProvider
+
+class InternalHubPromptProvider(BasePromptProvider):
+    def _fetch(self, prompt_name: str) -> tuple[str, str]:
+        # Example API call to internal prompt registry
+        res = my_internal_api.fetch_prompt(prompt_name)
+        return res.text, res.version_uuid
+```
 
 ### OpenTelemetry Integration
 
