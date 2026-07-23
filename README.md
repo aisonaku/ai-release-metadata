@@ -18,10 +18,10 @@ This SDK provides a minimal set of context managers and decorators that automati
 
 ```mermaid
 flowchart TD
-    App[Application] -->|with release_context()| Provider[MetadataProvider]
+    App[Application] -->|with release_context| Provider[MetadataProvider]
     Provider -->|extract| Plugins["Plugins (Git, Env)"]
     Plugins --> Context(("Release Context"))
-    Context -->|get_current_context()| Exporters["Exporters"]
+    Context -->|get_current_context| Exporters["Exporters"]
     Exporters --> OTEL["OpenTelemetry / Structlog"]
 ```
 
